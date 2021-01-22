@@ -8,185 +8,152 @@ import CompleteOrderList from './CompleteOrderList';
 import { Table } from '../types';
 import { LeftCircleOutlined, RightCircleOutlined } from "@ant-design/icons";
 import { Link } from 'react-router-dom';
+import OrderList from "./OrderList";
 
 const App = () => {
-  const query = queryString.parse(window.location.search);
+    const query = queryString.parse(window.location.search);
 
-  const [ newOrderList,setNewOrderList ] = useState<any>([]);
-  const [ comOrderList, setComOrderList ] = useState<any>([])
-  const [ state,setState ] = useState<number>(0);
-  const [radio,setRadio]=useState<any>(0);
-  const [date, setDate] = useState<any>(new Date());
-  const [page, setPage]=useState<number>(1);
-
+    const [ newOrderList,setNewOrderList ] = useState<any>([]);
+    const [ comOrderList, setComOrderList ] = useState<any>([])
+    const [ state,setState ] = useState<number>(0);
+    const [date, setDate] = useState<any>(new Date());
+    const [page, setPage]=useState<number>(1);
 
 
-  const onChangeRadio= (e:any) => {
 
-    setRadio(e.target.value);
+    function tick() {
+        let now = new Date();
+        setDate(now);
+    }
 
-  };
+    const toggleCheck = (t:string) => {
 
-  
-  function tick() {
-    let now = new Date();
-    setDate(now);
-  }
+        newOrderList.map((doc:Table)=>{
 
-  const toggleCheck = (t:string) => {
-    
-    newOrderList.map((doc:Table)=>{
+            if(doc.myTable === t){
 
-      if(doc.myTable === t){
+                dbService.collection(`${query.store}`).doc(`${t}`).update({state:true})
 
-        dbService.collection(`${query.store}`).doc(`${t}`).update({state:true})
-        
-      }
-      
-    })
-                  
-  }
-
-
-  const getOrders = (orderState:string) => {
-    setComOrderList([]);
-    setNewOrderList([])
-    
-    
-
-    dbService.collection(`${query.store}`)
-      .orderBy(`${orderState}`)
-      .onSnapshot((snapShot:any)=>{
-
-        snapShot.forEach((doc:any)=>{
-          console.log(doc.data());
-
-          if(!doc.data().state && doc.data().orderStatus){
-            const tableObj : Table = {
-
-
-              myTable:doc.id,
-              orderList:doc.data().bucket,
-              orderStatus:doc.data().orderStatus,
-              state:doc.data().state,
-              totalPrice:doc.data().totalPrice
-              
             }
-            console.log(tableObj)
-            setNewOrderList((prev: any) => [tableObj, ...prev]);               
-            
-          } else {
-            const tableObj : Table = {
-
-
-
-              myTable:doc.id,
-              orderList:doc.data().bucket,
-              orderStatus:doc.data().orderStatus,
-              state:doc.data().state,
-              totalPrice:doc.data().totalPrice
-              
-            }
-
-            setComOrderList((prev: any) => [tableObj, ...prev]);   
-
-          }
 
         })
 
-        
-
-      });
-
-
-
-  }
-
-  useEffect(()=>{
-    if(radio === 0){
-
-      getOrders('orderAt');
-
-    } else {
-      
-      getOrders('orderAt_R');
     }
 
-    
-    let timerID =setInterval(()=>tick(),1000);
-    return function cleanUp(){
-      clearInterval(timerID);
-    };
-    
-  },[radio]);
+
+    const getOrders = (orderState:string) => {
 
 
-  
+        setComOrderList([]);
+        setNewOrderList([]);
 
 
-  const listState = () => {
 
-    if(state === 0) return <NewOrderList table={newOrderList} toggleCheck={toggleCheck} indexNumber={page}/>
-    else return <CompleteOrderList table={comOrderList}/>
+        dbService.collection(`${query.store}`)
+            .orderBy(`${orderState}`)
+            .onSnapshot((snapShot:any)=>{
 
-  }
- 
-  return (
-    <div className="App">
-      <div>
-          <Menu className="Menu" mode="horizontal" defaultSelectedKeys={['2']}>
-              <Menu.Item key="1">
-                  <h1>{query.store}</h1>
-              </Menu.Item>
-          </Menu>
-      </div>
-      <div>
-        <Link to={`/setting/?store=${query.store}`}><button>메뉴관리</button></Link>
-      </div>
+                snapShot.forEach((doc:any)=>{
+                    console.log(doc.data());
 
-      <div className="orderButtonClass">
+                    if(!doc.data().state && doc.data().orderStatus){
+                        const tableObj : Table = {
 
-        <button className={`newOrderButton ${!state && "buttonClicked"}`} onClick={()=>{
-            setState(0);
-            setPage(1);
-        }}>새로운주문</button>
-        <button className={`completeOrderButton ${state && "buttonClicked"}`} onClick={()=>setState(1)}>접수완료</button>
-      </div>
-      <div className="infoBar">
-          <div className="radioDiv">
-              <Radio.Group onChange={onChangeRadio} value={radio}>
-                  <Radio value={0}>최신 주문순</Radio>
-                  <Radio value={1}>과거 주문순</Radio>
-              </Radio.Group>
-          </div>
-          <div className="timer">
-              <h1>{date.toLocaleString('kr')}</h1>
-          </div>
 
-      </div>
-      <hr className="infoHr"/>
+                            myTable:doc.id,
+                            orderList:doc.data().bucket,
+                            orderStatus:doc.data().orderStatus,
+                            state:doc.data().state,
+                            totalPrice:doc.data().totalPrice
 
-      <div>
-          {listState()}
-      </div>
-      <div className="pageButton">
-          <LeftCircleOutlined className="circleButton" onClick={()=>{
-              if(page>1){
-                  setPage(page-1);
-              }
-          }}/>
-          <h1>{page}/{Math.ceil(newOrderList.length/3)}</h1>
-          <RightCircleOutlined className="circleButton" onClick={()=>{
-              if(page<newOrderList.length/3+1){
-                  setPage(page+1);
-              }
-          }}/>
-      </div>
-      <hr/>
+                        }
+                        console.log(tableObj)
+                        setNewOrderList((prev: any) => [tableObj, ...prev]);
 
-      
-    </div>
-  );
+                    } else {
+                        const tableObj : Table = {
+                            myTable:doc.id,
+                            orderList:doc.data().bucket,
+                            orderStatus:doc.data().orderStatus,
+                            state:doc.data().state,
+                            totalPrice:doc.data().totalPrice
+
+                        }
+
+                        setComOrderList((prev: any) => [tableObj, ...prev]);
+
+                    }
+
+                })
+
+
+
+            });
+
+
+
+    }
+
+    useEffect(()=>{
+        getOrders('orderAt');
+        let timerID =setInterval(()=>tick(),1000);
+        return function cleanUp(){
+            clearInterval(timerID);
+        };
+
+    },[]);
+
+
+    return (
+        <div className="App">
+            <div>
+                <Menu className="Menu" mode="horizontal" defaultSelectedKeys={['2']}>
+                    <Menu.Item key="1">
+                        <h1>{query.store}</h1>
+                    </Menu.Item>
+                </Menu>
+            </div>
+            <div>
+                <Link to={`/setting/?store=${query.store}`}><button>메뉴관리</button></Link>
+            </div>
+
+            <div className="orderButtonClass">
+
+                <button className={`newOrderButton ${!state && "buttonClicked"}`} onClick={()=>{
+                    setState(0);
+                    setPage(1);
+                }}>새로운주문</button>
+                <button className={`completeOrderButton ${state && "buttonClicked"}`} onClick={()=>setState(1)}>접수완료</button>
+            </div>
+            <div className="infoBar">
+                <div className="timer">
+                    <h1>{date.toLocaleString('kr')}</h1>
+                </div>
+
+            </div>
+            <hr className="infoHr"/>
+
+            <div>
+                <OrderList newTable={newOrderList} comTable={comOrderList} indexNumber={page} toggleCheck={toggleCheck}/>
+            </div>
+            <div className="pageButton">
+                <LeftCircleOutlined className="circleButton" onClick={()=>{
+                    if(page>1){
+                        setPage(page-1);
+                    }
+                }}/>
+                <h1>{page}/{Math.ceil(newOrderList.length/3)}</h1>
+                <RightCircleOutlined className="circleButton" onClick={()=>{
+                    if(page<newOrderList.length/3+1){
+                        setPage(page+1);
+                    }
+                }}/>
+            </div>
+            <hr/>
+
+
+        </div>
+    );
 }
 
 export default App;
